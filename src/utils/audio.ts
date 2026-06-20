@@ -98,27 +98,27 @@ export function playWinSound() {
     { freq: 1318.5, t: 0.36 },   // E6  ← climax note
   ];
   arpNotes.forEach(({ freq, t }) => {
-    playTone(freq,       "triangle", 0.35, now + t, 0.20, c);
-    playTone(freq * 2,   "sine",     0.15, now + t, 0.04, c); // octave shimmer
+    playTone(freq,       "triangle", 0.35, now + t, 0.35, c);
+    playTone(freq * 2,   "sine",     0.15, now + t, 0.10, c); // octave shimmer
   });
 
   // ── Layer 2: Full triumphant chord hits at the peak (0.36s)
   // C6 + E6 + G6 major chord — rich & full
   const chordNotes = [1046.5, 1318.5, 1567.98];
   chordNotes.forEach((freq, i) => {
-    playTone(freq, "triangle", 0.70, now + 0.40, 0.16 - i * 0.03, c);
-    playTone(freq, "sine",     0.70, now + 0.40, 0.08 - i * 0.01, c, 8); // slight detune for warmth
+    playTone(freq, "triangle", 0.70, now + 0.40, 0.30 - i * 0.05, c);
+    playTone(freq, "sine",     0.70, now + 0.40, 0.15 - i * 0.02, c, 8); // slight detune for warmth
   });
 
   // ── Layer 3: Sparkle shimmer (very high triangle — glittery highs)
   const sparkle = [2093, 2637, 3136]; // C7 E7 G7
   sparkle.forEach((freq, i) => {
-    playTone(freq, "triangle", 0.12, now + 0.42 + i * 0.04, 0.05, c);
+    playTone(freq, "triangle", 0.12, now + 0.42 + i * 0.04, 0.15, c);
   });
 
   // ── Layer 4: Low bass punch at the start for impact
-  playTone(130.81, "triangle", 0.25, now, 0.18, c); // C3 bass
-  playTone(261.63, "triangle", 0.20, now + 0.27, 0.12, c); // C4 mid bass at peak
+  playTone(130.81, "triangle", 0.25, now, 0.30, c); // C3 bass
+  playTone(261.63, "triangle", 0.20, now + 0.27, 0.25, c); // C4 mid bass at peak
 }
 
 /**
@@ -139,13 +139,13 @@ export function playFailSound() {
 
   wahs.forEach(({ start, end, t, dur }) => {
     // Main slide (sawtooth — brassy wah feel)
-    playGlide(start, end, "sawtooth", now + t, dur, 0.17, c);
+    playGlide(start, end, "sawtooth", now + t, dur, 0.35, c);
     // Sub-octave harmony (triangle — adds body)
-    playGlide(start / 2, end / 2, "triangle", now + t, dur, 0.09, c);
+    playGlide(start / 2, end / 2, "triangle", now + t, dur, 0.20, c);
   });
 
   // Final very low groan — seals the defeat
-  playGlide(200, 80, "sawtooth", now + 1.22, 0.55, 0.10, c);
+  playGlide(200, 80, "sawtooth", now + 1.22, 0.55, 0.25, c);
 }
 
 /** ✨ Bright coin chime — ascending C major arpeggio */
@@ -155,7 +155,7 @@ export function playCoinSound() {
   const now = c.currentTime;
   const notes = [523, 659, 784, 1047]; // C5 E5 G5 C6
   notes.forEach((freq, i) => {
-    playTone(freq, "triangle", 0.18, now + i * 0.07, 0.18, c);
+    playTone(freq, "triangle", 0.18, now + i * 0.07, 0.40, c);
   });
 }
 
@@ -165,7 +165,7 @@ export function playHeartSound() {
   if (!c) return;
   const now = c.currentTime;
   [330, 415, 494].forEach((freq, i) => {
-    playTone(freq, "sine", 0.35, now + i * 0.04, 0.12, c);
+    playTone(freq, "sine", 0.35, now + i * 0.04, 0.30, c);
   });
 }
 
@@ -174,7 +174,7 @@ export function playTickSound() {
   const c = getCtx();
   if (!c) return;
   const now = c.currentTime;
-  playTone(880, "square", 0.04, now, 0.06, c);
+  playTone(880, "square", 0.04, now, 0.20, c);
 }
 
 /** 👆 Tile tap — subtle soft click */
@@ -182,7 +182,7 @@ export function playTapSound() {
   const c = getCtx();
   if (!c) return;
   const now = c.currentTime;
-  playTone(660, "sine", 0.06, now, 0.08, c);
+  playTone(660, "sine", 0.06, now, 0.25, c);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -197,7 +197,7 @@ export function initBGM() {
   if (!bgm) {
     bgm = new Audio("/audio/bgm.mp3");
     bgm.loop = true;
-    bgm.volume = 0.04;
+    bgm.volume = 0.015;
     
     // Check local storage for initial mute state
     const stored = localStorage.getItem("camo_bgm_muted");

@@ -241,16 +241,6 @@ export const GameView: React.FC<GameViewProps> = ({
           <button className="btn-icon" onClick={onHome} id="btn-game-home">
             <Home size={18} />
           </button>
-          <button
-            onClick={handleBgmToggle}
-            className="btn-icon bgm-toggle-btn"
-            title={bgmEnabled ? "Mute BGM" : "Unmute BGM"}
-            style={{ width: "32px", height: "32px", borderRadius: "50%", background: "var(--card-bg)", border: "1px solid var(--border-color)", color: bgmEnabled ? "var(--accent)" : "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s ease", flexShrink: 0 }}
-            aria-label="Toggle Background Music"
-            id="btn-bgm-toggle-game"
-          >
-            {bgmEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-          </button>
           <div style={{ fontWeight: 800, fontSize: "1.1rem", fontFamily: "Outfit" }}>
             LVL {levelData.levelId}
           </div>
@@ -280,12 +270,23 @@ export const GameView: React.FC<GameViewProps> = ({
       {/* ── Theme Banner ── */}
       <div
         className={`theme-banner theme-banner-${levelData.theme}`}
-        style={{ "--theme-accent": banner.accent } as React.CSSProperties}
+        style={{ "--theme-accent": banner.accent, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" } as React.CSSProperties}
       >
         <span className="theme-banner-icon" aria-hidden="true">{banner.icon}</span>
         <span className="theme-banner-label">{banner.label}</span>
         <span className="theme-banner-dot">•</span>
         <span className={`theme-banner-difficulty ${diff.cls}`}>{diff.label}</span>
+        <span className="theme-banner-dot">•</span>
+        <button
+          onClick={handleBgmToggle}
+          className="bgm-toggle-banner-btn"
+          title={bgmEnabled ? "Mute BGM" : "Unmute BGM"}
+          style={{ background: "transparent", border: "none", color: bgmEnabled ? "var(--theme-accent)" : "var(--text-muted)", display: "inline-flex", alignItems: "center", justifyContent: "center", cursor: "pointer", padding: "2px", margin: 0, transition: "color 0.2s ease" }}
+          aria-label="Toggle Background Music"
+          id="btn-bgm-toggle-game"
+        >
+          {bgmEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+        </button>
       </div>
 
       {/* Floating Target */}
