@@ -241,6 +241,16 @@ export const GameView: React.FC<GameViewProps> = ({
           <button className="btn-icon" onClick={onHome} id="btn-game-home">
             <Home size={18} />
           </button>
+          <button
+            onClick={handleBgmToggle}
+            className="btn-icon bgm-toggle-btn"
+            title={bgmEnabled ? "Mute BGM" : "Unmute BGM"}
+            style={{ width: "32px", height: "32px", borderRadius: "50%", background: "var(--card-bg)", border: "1px solid var(--border-color)", color: bgmEnabled ? "var(--accent)" : "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s ease", flexShrink: 0 }}
+            aria-label="Toggle Background Music"
+            id="btn-bgm-toggle-game"
+          >
+            {bgmEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+          </button>
           <div style={{ fontWeight: 800, fontSize: "1.1rem", fontFamily: "Outfit" }}>
             LVL {levelData.levelId}
           </div>
@@ -254,16 +264,6 @@ export const GameView: React.FC<GameViewProps> = ({
         </div>
 
         <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-          <button
-            onClick={handleBgmToggle}
-            className="btn-icon bgm-toggle-btn"
-            title={bgmEnabled ? "Mute BGM" : "Unmute BGM"}
-            style={{ padding: "6px", borderRadius: "50%", background: "var(--card-bg)", border: "1px solid var(--border-color)", color: bgmEnabled ? "var(--accent)" : "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s ease" }}
-            aria-label="Toggle Background Music"
-            id="btn-bgm-toggle-game"
-          >
-            {bgmEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
-          </button>
           <AnimatedBadge
             value={noAds ? "∞" : hearts}
             icon={<Heart size={15} color="var(--heart-red)" fill="var(--heart-red)" />}
