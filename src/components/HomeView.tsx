@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Play, BookOpen, RefreshCw, Heart, Coins, Clock, Search } from "lucide-react";
+import { Play, BookOpen, RefreshCw, Heart, Coins, Clock, Search, Volume2, VolumeX } from "lucide-react";
 import { AnimatedBadge } from "./AnimatedBadge";
 import type { ShopTab } from "./ShopModal";
+import { toggleBGM, isBGMEnabled } from "../utils/audio";
 
 interface HomeViewProps {
   onPlay: () => void;
@@ -48,6 +49,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const diff  = getDifficultyLabel(currentLevelId);
   const theme = currentLevelTheme; // ← 실제 레벨 데이터의 테마를 사용 (불일치 버그 수정)
 
+  const [bgmEnabled, setBgmEnabled] = useState(() => isBGMEnabled());
+  const handleBgmToggle = () => {
+    const nextEnabled = toggleBGM();
+    setBgmEnabled(nextEnabled);
+  };
+
   // ── Heart refill countdown ───────────────────────────────────────────────
   const [countdown, setCountdown] = useState<number | null>(null);
   useEffect(() => {
@@ -72,7 +79,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
       {/* Top bar */}
       <div className="home-top-bar">
         <span className="home-top-logo">CAMO GRID</span>
-        <div className="home-economy-bar">
+        <div className="home-economy-bar" style={{ gap: "6px" }}>
+          <button
+            onClick={handleBgmToggle}
+            className="btn-icon bgm-toggle-btn"
+            title={bgmEnabled ? "Mute BGM" : "Unmute BGM"}
+            style={{ padding: "8px", borderRadius: "50%", background: "var(--card-bg)", border: "1px solid var(--border-color)", color: bgmEnabled ? "var(--accent)" : "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s ease" }}
+            aria-label="Toggle Background Music"
+            id="btn-bgm-toggle"
+          >
+            {bgmEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+          </button>
           <AnimatedBadge
             value={noAds ? "∞" : hearts}
             icon={<Heart size={16} color="var(--heart-red)" fill="var(--heart-red)" />}

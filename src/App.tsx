@@ -9,6 +9,7 @@ import { ResultView } from "./components/ResultView";
 import { TallyView }  from "./components/TallyView";
 import { ShopModal }  from "./components/ShopModal";
 import type { ShopTab } from "./components/ShopModal";
+import { playBGM } from "./utils/audio";
 
 // ── localStorage helpers ───────────────────────────────────────────────────
 const LS_LEVEL      = "camo_level_id";
@@ -155,6 +156,23 @@ export default function App() {
     };
     const id = setInterval(tick, 30_000);
     return () => clearInterval(id);
+  }, []);
+
+  // ── Autoplay BGM trigger ───────────────────────────────────────────────
+  useEffect(() => {
+    const handleAutoplay = () => {
+      playBGM();
+      window.removeEventListener("click", handleAutoplay);
+      window.removeEventListener("touchstart", handleAutoplay);
+    };
+
+    window.addEventListener("click", handleAutoplay);
+    window.addEventListener("touchstart", handleAutoplay);
+
+    return () => {
+      window.removeEventListener("click", handleAutoplay);
+      window.removeEventListener("touchstart", handleAutoplay);
+    };
   }, []);
 
   // ── Level data ─────────────────────────────────────────────────────────

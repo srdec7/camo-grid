@@ -184,3 +184,64 @@ export function playTapSound() {
   const now = c.currentTime;
   playTone(660, "sine", 0.06, now, 0.08, c);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BGM (BACKGROUND MUSIC) CONTROLLER
+// ─────────────────────────────────────────────────────────────────────────────
+
+let bgm: HTMLAudioElement | null = null;
+let isMuted = false;
+
+export function initBGM() {
+  if (typeof window === "undefined") return;
+  if (!bgm) {
+    bgm = new Audio("/audio/bgm.mp3");
+    bgm.loop = true;
+    bgm.volume = 0.15;
+    
+    // Check local storage for initial mute state
+    const stored = localStorage.getItem("camo_bgm_muted");
+    if (stored === "true") {
+      isMuted = true;
+    }
+  }
+}
+
+export function playBGM() {
+  initBGM();
+  if (bgm && !isMuted) {
+    bgm.play().catch(err => {
+      console.warn("Autoplay blocked by browser. BGM will play on user interaction.", err);
+    });
+  }
+}
+
+export function pauseBGM() {
+  if (bgm) bgm.pause();
+}
+
+export function toggleBGM(): boolean {
+  initBGM();
+  if (!bgm) return false;
+  
+  isMuted = !isMuted;
+  localStorage.setItem("camo_bgm_muted", isMuted ? "true" : "false");
+  
+  if (isMuted) {
+    bgm.pause();
+  } else {
+    bgm.play().catch(() => {});
+  }
+  return !isMuted;
+}
+
+export function isBGMEnabled(): boolean {
+  if (typeof window !== "undefined" && !bgm) {
+    // If not initialized yet, peek at localStorage
+    const stored = localStorage.getItem("camo_bgm_muted");
+    if (stored === "true") {
+      isMuted = true;
+    }
+  }
+  return !isMuted;
+}
