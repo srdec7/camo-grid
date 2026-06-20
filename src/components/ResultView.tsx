@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import type { GameResult } from "../types";
-import { RotateCcw, ArrowRight, Home, Coins, Tv, Heart } from "lucide-react";
+import { RotateCcw, ArrowRight, Home, Coins, Tv, Heart, Volume2, VolumeX } from "lucide-react";
 import { showRewardedAd } from "../utils/adBridge";
 import type { ShopTab } from "./ShopModal";
+import { toggleBGM, isBGMEnabled } from "../utils/audio";
 
 // Sounds are already played by GameView the moment win/fail is detected.
 // ResultView is purely for UI — no duplicate sounds here.
@@ -28,6 +29,12 @@ export const ResultView: React.FC<ResultViewProps> = ({
   onDoubleCoins, noAds,
 }) => {
   const [doubled,   setDoubled]   = useState(false);
+
+  const [bgmEnabled, setBgmEnabled] = useState(() => isBGMEnabled());
+  const handleBgmToggle = () => {
+    const nextEnabled = toggleBGM();
+    setBgmEnabled(nextEnabled);
+  };
   const [adLoading, setAdLoading] = useState(false);
 
   // ── Double coins ad ──────────────────────────────────────────────────────
@@ -64,7 +71,17 @@ export const ResultView: React.FC<ResultViewProps> = ({
 
   return (
     <div className="result-view fade-in">
-      <div className="glass-panel scale-in" style={{ textAlign: "center", width: "100%", maxWidth: 360 }}>
+      <div className="glass-panel scale-in" style={{ textAlign: "center", width: "100%", maxWidth: 360, position: "relative" }}>
+        <button
+          onClick={handleBgmToggle}
+          className="btn-icon bgm-toggle-btn"
+          title={bgmEnabled ? "Mute BGM" : "Unmute BGM"}
+          style={{ position: "absolute", top: 12, right: 12, padding: "6px", borderRadius: "50%", background: "var(--card-bg)", border: "1px solid var(--border-color)", color: bgmEnabled ? "var(--accent)" : "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s ease" }}
+          aria-label="Toggle Background Music"
+          id="btn-bgm-toggle-result"
+        >
+          {bgmEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+        </button>
         {result.won ? (
           <>
             <div style={{ fontSize: "3rem", marginBottom: 8 }}>🎉</div>

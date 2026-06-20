@@ -3,8 +3,8 @@ import type { LevelData, GameResult } from "../types";
 import { useGameLogic } from "../hooks/useGameLogic";
 import { Board } from "./Board";
 import { AnimatedBadge } from "./AnimatedBadge";
-import { Home, RotateCcw, Heart, Coins, Search, X, ArrowRight, Tv, Trees, Sun, Snowflake } from "lucide-react";
-import { playTapSound, playWinSound, playFailSound } from "../utils/audio";
+import { Home, RotateCcw, Heart, Coins, Search, X, ArrowRight, Tv, Trees, Sun, Snowflake, Volume2, VolumeX } from "lucide-react";
+import { playTapSound, playWinSound, playFailSound, toggleBGM, isBGMEnabled } from "../utils/audio";
 import { showRewardedAd } from "../utils/adBridge";
 import type { ShopTab } from "./ShopModal";
 
@@ -46,6 +46,12 @@ export const GameView: React.FC<GameViewProps> = ({
 }) => {
   const { board, taps, status, foundZone, handleTileTap, initBoard, addBonusMoves } = useGameLogic(levelData, onFinish);
   const [magnified, setMagnified] = useState(false);
+
+  const [bgmEnabled, setBgmEnabled] = useState(() => isBGMEnabled());
+  const handleBgmToggle = () => {
+    const nextEnabled = toggleBGM();
+    setBgmEnabled(nextEnabled);
+  };
 
   // Fail reveal + continue offer
   const [showFailOptions, setShowFailOptions] = useState(false);
@@ -247,7 +253,17 @@ export const GameView: React.FC<GameViewProps> = ({
           </span>
         </div>
 
-        <div style={{ display: "flex", gap: "6px" }}>
+        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+          <button
+            onClick={handleBgmToggle}
+            className="btn-icon bgm-toggle-btn"
+            title={bgmEnabled ? "Mute BGM" : "Unmute BGM"}
+            style={{ padding: "6px", borderRadius: "50%", background: "var(--card-bg)", border: "1px solid var(--border-color)", color: bgmEnabled ? "var(--accent)" : "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s ease" }}
+            aria-label="Toggle Background Music"
+            id="btn-bgm-toggle-game"
+          >
+            {bgmEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+          </button>
           <AnimatedBadge
             value={noAds ? "∞" : hearts}
             icon={<Heart size={15} color="var(--heart-red)" fill="var(--heart-red)" />}
