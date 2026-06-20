@@ -66,8 +66,8 @@ export const Board: React.FC<BoardProps> = ({ boardData, onTileTap, magnified, d
     minScaleRef.current = clampedScale; // Set the dynamic minimum scale to the initial fit scale
     
     const x = (cw - boardWidthPx * clampedScale) / 2;
-    // Shift slightly upward (using 0.25 multiplier instead of 0.5 to move it higher)
-    const y = Math.max(16, (ch - boardHeightPx * clampedScale) * 0.25);
+    // Shift slightly upward (using 0.10 multiplier to move it higher)
+    const y = Math.max(8, (ch - boardHeightPx * clampedScale) * 0.10);
     
     setPosition({ x, y });
     setScale(clampedScale);
