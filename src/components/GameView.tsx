@@ -270,7 +270,7 @@ export const GameView: React.FC<GameViewProps> = ({
       {/* ── Theme Banner ── */}
       <div
         className={`theme-banner theme-banner-${levelData.theme}`}
-        style={{ "--theme-accent": banner.accent, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" } as React.CSSProperties}
+        style={{ "--theme-accent": banner.accent } as React.CSSProperties}
       >
         <span className="theme-banner-icon" aria-hidden="true">{banner.icon}</span>
         <span className="theme-banner-label">{banner.label}</span>
