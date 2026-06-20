@@ -197,7 +197,7 @@ export function initBGM() {
   if (!bgm) {
     bgm = new Audio("/audio/bgm.mp3");
     bgm.loop = true;
-    bgm.volume = 0.007;
+    bgm.volume = 0.0035;
     
     // Check local storage for initial mute state
     const stored = localStorage.getItem("camo_bgm_muted");
