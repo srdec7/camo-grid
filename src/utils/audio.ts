@@ -231,43 +231,60 @@ function loadBgmBuffer(c: AudioContext): Promise<AudioBuffer | null> {
   return bgmLoadPromise;
 }
 
-export function playBGM(): Promise<boolean> {
+export function preloadBGM() {
+  if (typeof window === "undefined") return;
+  const c = getCtx();
+  if (c) {
+    loadBgmBuffer(c);
+  }
+}
+
+function startBGMNode(c: AudioContext, buffer: AudioBuffer) {
+  try {
+    bgmSource = c.createBufferSource();
+    bgmSource.buffer = buffer;
+    bgmSource.loop = true;
+
+    bgmGainNode = c.createGain();
+    bgmGainNode.gain.setValueAtTime(0.0035, c.currentTime);
+
+    bgmSource.connect(bgmGainNode);
+    bgmGainNode.connect(c.destination);
+
+    const offset = bgmPauseOffset % buffer.duration;
+    bgmSource.start(0, offset);
+    bgmStartTime = c.currentTime - offset;
+    isPlaying = true;
+  } catch (err) {
+    console.warn("Failed to start Web Audio BGM node:", err);
+  }
+}
+
+export function playBGM(): boolean {
   initBGM();
-  if (isMuted) return Promise.resolve(false);
+  if (isMuted) return false;
 
   const c = getCtx();
-  if (!c) return Promise.resolve(false);
+  if (!c) return false;
 
   if (isPlaying && bgmSource) {
-    return Promise.resolve(true);
+    return true;
   }
 
-  return loadBgmBuffer(c).then(buffer => {
-    if (!buffer) return false;
-    if (isMuted) return false;
-    if (isPlaying && bgmSource) return true;
-
-    try {
-      bgmSource = c.createBufferSource();
-      bgmSource.buffer = buffer;
-      bgmSource.loop = true;
-
-      bgmGainNode = c.createGain();
-      bgmGainNode.gain.setValueAtTime(0.0035, c.currentTime);
-
-      bgmSource.connect(bgmGainNode);
-      bgmGainNode.connect(c.destination);
-
-      const offset = bgmPauseOffset % buffer.duration;
-      bgmSource.start(0, offset);
-      bgmStartTime = c.currentTime - offset;
-      isPlaying = true;
-      return true;
-    } catch (err) {
-      console.warn("Failed to play Web Audio BGM:", err);
-      return false;
-    }
-  });
+  if (bgmBuffer) {
+    startBGMNode(c, bgmBuffer);
+    return true;
+  } else {
+    // Start/continue loading in the background
+    loadBgmBuffer(c).then(buffer => {
+      if (buffer && !isMuted && !isPlaying) {
+        if (c.state === "running") {
+          startBGMNode(c, buffer);
+        }
+      }
+    });
+    return false;
+  }
 }
 
 export function pauseBGM() {
@@ -292,7 +309,7 @@ export function toggleBGM(): boolean {
   if (isMuted) {
     pauseBGM();
   } else {
-    playBGM().catch(() => {});
+    playBGM();
   }
   return !isMuted;
 }

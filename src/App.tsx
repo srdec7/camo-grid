@@ -9,7 +9,7 @@ import { ResultView } from "./components/ResultView";
 import { TallyView }  from "./components/TallyView";
 import { ShopModal }  from "./components/ShopModal";
 import type { ShopTab } from "./components/ShopModal";
-import { playBGM, pauseBGM } from "./utils/audio";
+import { playBGM, pauseBGM, preloadBGM } from "./utils/audio";
 
 // ── localStorage helpers ───────────────────────────────────────────────────
 const LS_LEVEL      = "camo_level_id";
@@ -158,15 +158,19 @@ export default function App() {
     return () => clearInterval(id);
   }, []);
 
+  // ── Preload BGM on mount ────────────────────────────────────────────────
+  useEffect(() => {
+    preloadBGM();
+  }, []);
+
   // ── Autoplay BGM trigger with retry & Page Visibility handling ──────────
   useEffect(() => {
     const handleAutoplay = () => {
-      playBGM().then((success) => {
-        if (success) {
-          window.removeEventListener("click", handleAutoplay);
-          window.removeEventListener("touchend", handleAutoplay);
-        }
-      });
+      const success = playBGM();
+      if (success) {
+        window.removeEventListener("click", handleAutoplay);
+        window.removeEventListener("touchend", handleAutoplay);
+      }
     };
 
     window.addEventListener("click", handleAutoplay);
