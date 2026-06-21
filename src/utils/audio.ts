@@ -186,61 +186,111 @@ export function playTapSound() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// BGM (BACKGROUND MUSIC) CONTROLLER
+// BGM (BACKGROUND MUSIC) CONTROLLER (Web Audio API implementation for mobile compatibility)
 // ─────────────────────────────────────────────────────────────────────────────
 
-let bgm: HTMLAudioElement | null = null;
+let bgmBuffer: AudioBuffer | null = null;
+let bgmSource: AudioBufferSourceNode | null = null;
+let bgmGainNode: GainNode | null = null;
 let isMuted = false;
+let isPlaying = false;
+let bgmStartTime = 0;
+let bgmPauseOffset = 0;
+let bgmLoadPromise: Promise<AudioBuffer | null> | null = null;
 
 export function initBGM() {
   if (typeof window === "undefined") return;
-  if (!bgm) {
-    bgm = new Audio("/audio/bgm.mp3");
-    bgm.loop = true;
-    bgm.volume = 0.0035;
-    bgm.preload = "auto";
-    bgm.setAttribute("playsinline", "true");
-    bgm.setAttribute("webkit-playsinline", "true");
-    bgm.style.display = "none";
-    
-    if (document.body) {
-      document.body.appendChild(bgm);
-    }
-    
-    // Check local storage for initial mute state
-    const stored = localStorage.getItem("camo_bgm_muted");
-    if (stored === "true") {
-      isMuted = true;
-    }
-  }
+  const stored = localStorage.getItem("camo_bgm_muted");
+  isMuted = stored === "true";
+}
+
+function loadBgmBuffer(c: AudioContext): Promise<AudioBuffer | null> {
+  if (bgmBuffer) return Promise.resolve(bgmBuffer);
+  if (bgmLoadPromise) return bgmLoadPromise;
+
+  bgmLoadPromise = fetch("/audio/bgm.mp3")
+    .then(res => {
+      if (!res.ok) throw new Error("HTTP error " + res.status);
+      return res.arrayBuffer();
+    })
+    .then(arrayBuffer => {
+      return new Promise<AudioBuffer>((resolve, reject) => {
+        c.decodeAudioData(arrayBuffer, resolve, reject);
+      });
+    })
+    .then(buffer => {
+      bgmBuffer = buffer;
+      return buffer;
+    })
+    .catch(err => {
+      console.error("Failed to load or decode BGM:", err);
+      bgmLoadPromise = null;
+      return null;
+    });
+
+  return bgmLoadPromise;
 }
 
 export function playBGM(): Promise<boolean> {
   initBGM();
-  if (!bgm) return Promise.resolve(false);
   if (isMuted) return Promise.resolve(false);
 
-  return bgm.play()
-    .then(() => true)
-    .catch(err => {
-      console.warn("Autoplay blocked by browser. BGM will play on user interaction.", err);
+  const c = getCtx();
+  if (!c) return Promise.resolve(false);
+
+  if (isPlaying && bgmSource) {
+    return Promise.resolve(true);
+  }
+
+  return loadBgmBuffer(c).then(buffer => {
+    if (!buffer) return false;
+    if (isMuted) return false;
+    if (isPlaying && bgmSource) return true;
+
+    try {
+      bgmSource = c.createBufferSource();
+      bgmSource.buffer = buffer;
+      bgmSource.loop = true;
+
+      bgmGainNode = c.createGain();
+      bgmGainNode.gain.setValueAtTime(0.0035, c.currentTime);
+
+      bgmSource.connect(bgmGainNode);
+      bgmGainNode.connect(c.destination);
+
+      const offset = bgmPauseOffset % buffer.duration;
+      bgmSource.start(0, offset);
+      bgmStartTime = c.currentTime - offset;
+      isPlaying = true;
+      return true;
+    } catch (err) {
+      console.warn("Failed to play Web Audio BGM:", err);
       return false;
-    });
+    }
+  });
 }
 
 export function pauseBGM() {
-  if (bgm) bgm.pause();
+  if (bgmSource && isPlaying) {
+    const c = getCtx();
+    if (c) {
+      bgmPauseOffset = c.currentTime - bgmStartTime;
+    }
+    try {
+      bgmSource.stop();
+    } catch {}
+    bgmSource = null;
+    isPlaying = false;
+  }
 }
 
 export function toggleBGM(): boolean {
   initBGM();
-  if (!bgm) return false;
-  
   isMuted = !isMuted;
   localStorage.setItem("camo_bgm_muted", isMuted ? "true" : "false");
   
   if (isMuted) {
-    bgm.pause();
+    pauseBGM();
   } else {
     playBGM().catch(() => {});
   }
@@ -248,12 +298,6 @@ export function toggleBGM(): boolean {
 }
 
 export function isBGMEnabled(): boolean {
-  if (typeof window !== "undefined" && !bgm) {
-    // If not initialized yet, peek at localStorage
-    const stored = localStorage.getItem("camo_bgm_muted");
-    if (stored === "true") {
-      isMuted = true;
-    }
-  }
+  initBGM();
   return !isMuted;
 }
