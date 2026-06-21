@@ -215,9 +215,9 @@ function getPlatformBGMVolume(): number {
   if (isAndroid) {
     return 0.07; // 20x boost for Android to be audible on phone speakers
   } else if (isIOS) {
-    return 0.0035; // Quiet BGM on iPhone as requested
+    return 0.025; // Boosted volume for iPhone (Web Audio linear scale is much quieter than HTML5 Audio)
   } else {
-    return 0.007; // Desktop default
+    return 0.015; // Desktop default
   }
 }
 
