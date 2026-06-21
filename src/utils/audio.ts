@@ -196,7 +196,9 @@ let isMuted = false;
 let isPlaying = false;
 let bgmStartTime = 0;
 let bgmPauseOffset = 0;
-let bgmLoadPromise: Promise<AudioBuffer | null> | null = null;
+
+let bgmArrayBuffer: ArrayBuffer | null = null;
+let bgmFetchPromise: Promise<ArrayBuffer | null> | null = null;
 
 function getPlatformBGMVolume(): number {
   if (typeof window === "undefined" || typeof navigator === "undefined") {
@@ -225,42 +227,26 @@ export function initBGM() {
   isMuted = stored === "true";
 }
 
-function loadBgmBuffer(c: AudioContext): Promise<AudioBuffer | null> {
-  if (bgmBuffer) return Promise.resolve(bgmBuffer);
-  if (bgmLoadPromise) return bgmLoadPromise;
+export function preloadBGM() {
+  if (typeof window === "undefined") return;
+  if (bgmArrayBuffer || bgmFetchPromise) return;
 
-  console.log("[BGM] Fetching BGM from server...");
-  bgmLoadPromise = fetch("/audio/bgm.mp3")
+  console.log("[BGM] Preloading BGM ArrayBuffer in background (no AudioContext)...");
+  bgmFetchPromise = fetch("/audio/bgm.mp3")
     .then(res => {
       if (!res.ok) throw new Error("HTTP error " + res.status);
       return res.arrayBuffer();
     })
-    .then(arrayBuffer => {
-      console.log("[BGM] Decoding audio data...");
-      return new Promise<AudioBuffer>((resolve, reject) => {
-        c.decodeAudioData(arrayBuffer, resolve, reject);
-      });
-    })
-    .then(buffer => {
-      console.log("[BGM] Decoding succeeded!");
-      bgmBuffer = buffer;
-      return buffer;
+    .then(ab => {
+      console.log("[BGM] BGM ArrayBuffer preloaded successfully!");
+      bgmArrayBuffer = ab;
+      return ab;
     })
     .catch(err => {
-      console.error("[BGM] Failed to load or decode BGM:", err);
-      bgmLoadPromise = null;
+      console.error("[BGM] Failed to preload BGM:", err);
+      bgmFetchPromise = null;
       return null;
     });
-
-  return bgmLoadPromise;
-}
-
-export function preloadBGM() {
-  if (typeof window === "undefined") return;
-  const c = getCtx();
-  if (c) {
-    loadBgmBuffer(c);
-  }
 }
 
 function startBGMNode(c: AudioContext, buffer: AudioBuffer) {
@@ -297,18 +283,48 @@ export function playBGM(): boolean {
     return true;
   }
 
+  // Case 1: AudioBuffer is already decoded
   if (bgmBuffer) {
     startBGMNode(c, bgmBuffer);
     return true;
-  } else {
-    console.log("[BGM] Buffer not ready. Loading in background...");
-    loadBgmBuffer(c).then(buffer => {
-      if (buffer && !isMuted && !isPlaying) {
-        startBGMNode(c, buffer);
+  }
+
+  // Case 2: ArrayBuffer is loaded but not decoded yet
+  if (bgmArrayBuffer) {
+    console.log("[BGM] ArrayBuffer ready. Decoding inside user gesture context...");
+    c.decodeAudioData(bgmArrayBuffer, 
+      (buffer) => {
+        bgmBuffer = buffer;
+        if (!isMuted && !isPlaying) {
+          startBGMNode(c, buffer);
+        }
+      },
+      (err) => {
+        console.error("[BGM] Async decode failed:", err);
+      }
+    );
+    return true;
+  }
+
+  // Case 3: Still loading in the background
+  if (bgmFetchPromise) {
+    console.log("[BGM] Still preloading ArrayBuffer. Will decode and play once complete...");
+    bgmFetchPromise.then(ab => {
+      if (ab && !isMuted && !isPlaying) {
+        c.decodeAudioData(ab, (buffer) => {
+          bgmBuffer = buffer;
+          if (!isMuted && !isPlaying) {
+            startBGMNode(c, buffer);
+          }
+        });
       }
     });
     return false;
   }
+
+  // Fallback: preload and retry later
+  preloadBGM();
+  return false;
 }
 
 export function pauseBGM() {
