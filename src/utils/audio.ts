@@ -213,7 +213,7 @@ function getPlatformBGMVolume(): number {
   const isAndroid = /android/.test(ua);
   
   if (isAndroid) {
-    return 0.07; // 20x boost for Android to be audible on phone speakers
+    return 0.15; // Boosted for Android to be comfortably audible on phone speakers
   } else if (isIOS) {
     return 0.025; // Boosted volume for iPhone (Web Audio linear scale is much quieter than HTML5 Audio)
   } else {
