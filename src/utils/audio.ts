@@ -198,6 +198,27 @@ let bgmStartTime = 0;
 let bgmPauseOffset = 0;
 let bgmLoadPromise: Promise<AudioBuffer | null> | null = null;
 
+function getPlatformBGMVolume(): number {
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return 0.01;
+  }
+  const ua = navigator.userAgent.toLowerCase();
+  
+  // iOS detection (iPhone, iPad, iPod, and iPadOS 13+)
+  const isIOS = /iphone|ipad|ipod/.test(ua) || 
+                (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  
+  const isAndroid = /android/.test(ua);
+  
+  if (isAndroid) {
+    return 0.07; // 20x boost for Android to be audible on phone speakers
+  } else if (isIOS) {
+    return 0.0035; // Quiet BGM on iPhone as requested
+  } else {
+    return 0.007; // Desktop default
+  }
+}
+
 export function initBGM() {
   if (typeof window === "undefined") return;
   const stored = localStorage.getItem("camo_bgm_muted");
@@ -249,8 +270,8 @@ function startBGMNode(c: AudioContext, buffer: AudioBuffer) {
     bgmSource.loop = true;
 
     bgmGainNode = c.createGain();
-    // BGM linear gain slightly adjusted to 0.015 so it is audible on phone speakers
-    bgmGainNode.gain.setValueAtTime(0.015, c.currentTime);
+    const volume = getPlatformBGMVolume();
+    bgmGainNode.gain.setValueAtTime(volume, c.currentTime);
 
     bgmSource.connect(bgmGainNode);
     bgmGainNode.connect(c.destination);
@@ -259,7 +280,7 @@ function startBGMNode(c: AudioContext, buffer: AudioBuffer) {
     bgmSource.start(0, offset);
     bgmStartTime = c.currentTime - offset;
     isPlaying = true;
-    console.log(`[BGM] Playback started at offset: ${offset.toFixed(2)}s`);
+    console.log(`[BGM] Playback started at offset: ${offset.toFixed(2)}s with volume: ${volume}`);
   } catch (err) {
     console.warn("[BGM] Failed to start Web Audio BGM node:", err);
   }
