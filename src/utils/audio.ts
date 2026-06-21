@@ -208,22 +208,25 @@ function loadBgmBuffer(c: AudioContext): Promise<AudioBuffer | null> {
   if (bgmBuffer) return Promise.resolve(bgmBuffer);
   if (bgmLoadPromise) return bgmLoadPromise;
 
+  console.log("[BGM] Fetching BGM from server...");
   bgmLoadPromise = fetch("/audio/bgm.mp3")
     .then(res => {
       if (!res.ok) throw new Error("HTTP error " + res.status);
       return res.arrayBuffer();
     })
     .then(arrayBuffer => {
+      console.log("[BGM] Decoding audio data...");
       return new Promise<AudioBuffer>((resolve, reject) => {
         c.decodeAudioData(arrayBuffer, resolve, reject);
       });
     })
     .then(buffer => {
+      console.log("[BGM] Decoding succeeded!");
       bgmBuffer = buffer;
       return buffer;
     })
     .catch(err => {
-      console.error("Failed to load or decode BGM:", err);
+      console.error("[BGM] Failed to load or decode BGM:", err);
       bgmLoadPromise = null;
       return null;
     });
@@ -246,7 +249,8 @@ function startBGMNode(c: AudioContext, buffer: AudioBuffer) {
     bgmSource.loop = true;
 
     bgmGainNode = c.createGain();
-    bgmGainNode.gain.setValueAtTime(0.0035, c.currentTime);
+    // BGM linear gain slightly adjusted to 0.015 so it is audible on phone speakers
+    bgmGainNode.gain.setValueAtTime(0.015, c.currentTime);
 
     bgmSource.connect(bgmGainNode);
     bgmGainNode.connect(c.destination);
@@ -255,8 +259,9 @@ function startBGMNode(c: AudioContext, buffer: AudioBuffer) {
     bgmSource.start(0, offset);
     bgmStartTime = c.currentTime - offset;
     isPlaying = true;
+    console.log(`[BGM] Playback started at offset: ${offset.toFixed(2)}s`);
   } catch (err) {
-    console.warn("Failed to start Web Audio BGM node:", err);
+    console.warn("[BGM] Failed to start Web Audio BGM node:", err);
   }
 }
 
@@ -275,12 +280,10 @@ export function playBGM(): boolean {
     startBGMNode(c, bgmBuffer);
     return true;
   } else {
-    // Start/continue loading in the background
+    console.log("[BGM] Buffer not ready. Loading in background...");
     loadBgmBuffer(c).then(buffer => {
       if (buffer && !isMuted && !isPlaying) {
-        if (c.state === "running") {
-          startBGMNode(c, buffer);
-        }
+        startBGMNode(c, buffer);
       }
     });
     return false;
