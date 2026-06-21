@@ -198,6 +198,14 @@ export function initBGM() {
     bgm = new Audio("/audio/bgm.mp3");
     bgm.loop = true;
     bgm.volume = 0.0035;
+    bgm.preload = "auto";
+    bgm.setAttribute("playsinline", "true");
+    bgm.setAttribute("webkit-playsinline", "true");
+    bgm.style.display = "none";
+    
+    if (document.body) {
+      document.body.appendChild(bgm);
+    }
     
     // Check local storage for initial mute state
     const stored = localStorage.getItem("camo_bgm_muted");
@@ -207,13 +215,17 @@ export function initBGM() {
   }
 }
 
-export function playBGM() {
+export function playBGM(): Promise<boolean> {
   initBGM();
-  if (bgm && !isMuted) {
-    bgm.play().catch(err => {
+  if (!bgm) return Promise.resolve(false);
+  if (isMuted) return Promise.resolve(false);
+
+  return bgm.play()
+    .then(() => true)
+    .catch(err => {
       console.warn("Autoplay blocked by browser. BGM will play on user interaction.", err);
+      return false;
     });
-  }
 }
 
 export function pauseBGM() {
@@ -230,7 +242,7 @@ export function toggleBGM(): boolean {
   if (isMuted) {
     bgm.pause();
   } else {
-    bgm.play().catch(() => {});
+    playBGM().catch(() => {});
   }
   return !isMuted;
 }

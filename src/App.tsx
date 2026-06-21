@@ -9,7 +9,7 @@ import { ResultView } from "./components/ResultView";
 import { TallyView }  from "./components/TallyView";
 import { ShopModal }  from "./components/ShopModal";
 import type { ShopTab } from "./components/ShopModal";
-import { playBGM } from "./utils/audio";
+import { playBGM, pauseBGM } from "./utils/audio";
 
 // ── localStorage helpers ───────────────────────────────────────────────────
 const LS_LEVEL      = "camo_level_id";
@@ -158,20 +158,47 @@ export default function App() {
     return () => clearInterval(id);
   }, []);
 
-  // ── Autoplay BGM trigger ───────────────────────────────────────────────
+  // ── Autoplay BGM trigger with retry & Page Visibility handling ──────────
   useEffect(() => {
     const handleAutoplay = () => {
-      playBGM();
-      window.removeEventListener("click", handleAutoplay);
-      window.removeEventListener("touchstart", handleAutoplay);
+      playBGM().then((success) => {
+        if (success) {
+          window.removeEventListener("click", handleAutoplay);
+          window.removeEventListener("touchend", handleAutoplay);
+        }
+      });
     };
 
     window.addEventListener("click", handleAutoplay);
-    window.addEventListener("touchstart", handleAutoplay);
+    window.addEventListener("touchend", handleAutoplay);
+
+    // Visibility and Focus changes: Pause BGM when user exits/minimizes, resume when returning
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        pauseBGM();
+      } else {
+        playBGM();
+      }
+    };
+
+    const handleBlur = () => {
+      pauseBGM();
+    };
+
+    const handleFocus = () => {
+      playBGM();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
 
     return () => {
       window.removeEventListener("click", handleAutoplay);
-      window.removeEventListener("touchstart", handleAutoplay);
+      window.removeEventListener("touchend", handleAutoplay);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
     };
   }, []);
 
