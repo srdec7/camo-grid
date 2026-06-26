@@ -21,11 +21,11 @@ export function generateLevel(levelId: number): LevelData {
   const theme = themes[Math.floor(rand() * themes.length)];
 
   // ── 난이도별 파라미터 ──────────────────────────────────────────────────
-  let boardWidth = 15;
-  let boardHeight = 20;
-  let defectSize = 3;
-  let errorTilesCount = 3;
-  let bonusMoves = 5;
+  let boardWidth: number;
+  let boardHeight: number;
+  let defectSize: number;
+  let errorTilesCount: number;
+  let bonusMoves: number;
 
   if (diffId <= 15) {
     // Easy

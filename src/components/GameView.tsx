@@ -71,9 +71,11 @@ export const GameView: React.FC<GameViewProps> = ({
   const tapsRef      = useRef(taps);
   const levelIdRef   = useRef(levelData.levelId);
 
-  onFinishRef.current = onFinish;
-  tapsRef.current     = taps;
-  levelIdRef.current  = levelData.levelId;
+  useEffect(() => {
+    onFinishRef.current = onFinish;
+    tapsRef.current     = taps;
+    levelIdRef.current  = levelData.levelId;
+  });
 
   // Win ────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -94,7 +96,6 @@ export const GameView: React.FC<GameViewProps> = ({
     }, 1600);
 
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
   // Fail — show options panel (continue or give up) ──────────────────────
@@ -108,7 +109,6 @@ export const GameView: React.FC<GameViewProps> = ({
 
     const timer = setTimeout(() => setShowFailOptions(true), 300);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
   const dismissToResult = () => {
@@ -198,7 +198,6 @@ export const GameView: React.FC<GameViewProps> = ({
         setFloatingMoves(prev => prev.filter(fm => fm.id !== id));
       }, 850);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, taps, levelData.moveLimit, handleTileTap]);
 
   if (board.length === 0) return null;

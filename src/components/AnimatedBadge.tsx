@@ -54,7 +54,7 @@ export const AnimatedBadge: React.FC<AnimatedBadgeProps> = ({
     // Trigger pop animation
     setPopping(false);
     // force reflow to restart animation
-    void (document.body as any).offsetHeight;
+    void document.body.offsetHeight;
     setPopping(true);
     const resetTimer = setTimeout(() => setPopping(false), 450);
 

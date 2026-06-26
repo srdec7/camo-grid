@@ -9,7 +9,8 @@ function getCtx(): AudioContext | null {
   if (typeof window === "undefined") return null;
   if (!ctx) {
     try {
-      ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      ctx = new AudioContextClass();
     } catch {
       return null;
     }
@@ -215,7 +216,7 @@ function getPlatformBGMVolume(): number {
   if (isAndroid) {
     return 0.15; // Boosted for Android to be comfortably audible on phone speakers
   } else if (isIOS) {
-    return 0.025; // Boosted volume for iPhone (Web Audio linear scale is much quieter than HTML5 Audio)
+    return 0.05; // Boosted volume for iPhone (Web Audio linear scale is much quieter than HTML5 Audio)
   } else {
     return 0.015; // Desktop default
   }
@@ -335,7 +336,9 @@ export function pauseBGM() {
     }
     try {
       bgmSource.stop();
-    } catch {}
+    } catch {
+      // ignore errors if already stopped
+    }
     bgmSource = null;
     isPlaying = false;
   }

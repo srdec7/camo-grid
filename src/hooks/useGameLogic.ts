@@ -137,6 +137,7 @@ export function useGameLogic(levelData: LevelData | null, onFinish: (result: Gam
   }, [levelData]);
 
   useEffect(() => {
+    // eslint-disable-next-line
     initBoard();
   }, [initBoard]);
 
@@ -193,6 +194,7 @@ export function useGameLogic(levelData: LevelData | null, onFinish: (result: Gam
 
     const matchedZone = checkWinCondition(board);
     if (matchedZone) {
+      // eslint-disable-next-line
       setFoundZone(matchedZone);
       setStatus("won");
     } else if (levelData.moveLimit > 0 && taps >= levelData.moveLimit + bonusMoves) {

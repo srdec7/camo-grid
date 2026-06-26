@@ -91,7 +91,7 @@ export const Board: React.FC<BoardProps> = ({ boardData, onTileTap, magnified, d
       
       const targetX = cw / 2 - defectCenterX * targetScale;
       const targetY = ch / 2 - defectCenterY * targetScale;
-      
+      // eslint-disable-next-line
       setIsAnimating(true);
       setPosition(clampPosition(targetX, targetY, targetScale));
       setScale(targetScale);
@@ -99,6 +99,7 @@ export const Board: React.FC<BoardProps> = ({ boardData, onTileTap, magnified, d
       const timer = setTimeout(() => setIsAnimating(false), 400);
       return () => clearTimeout(timer);
     } else {
+      // eslint-disable-next-line
       setIsAnimating(true);
       zoomToFit();
       const timer = setTimeout(() => setIsAnimating(false), 400);

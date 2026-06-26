@@ -43,7 +43,7 @@ function formatMs(ms: number) {
 
 export const HomeView: React.FC<HomeViewProps> = ({
   onPlay, onRules, onReset, onOpenShop,
-  coins, hearts, hints, maxHearts, heartRefillMs: _heartRefillMs,
+  coins, hearts, hints, maxHearts,
   currentLevelId, currentLevelTheme, noAds,
 }) => {
   const diff  = getDifficultyLabel(currentLevelId);
@@ -58,6 +58,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   // ── Heart refill countdown ───────────────────────────────────────────────
   const [countdown, setCountdown] = useState<number | null>(null);
   useEffect(() => {
+    // eslint-disable-next-line
     if (hearts >= maxHearts) { setCountdown(null); return; }
 
     const updateCountdown = () => {

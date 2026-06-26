@@ -33,7 +33,7 @@ function loadBool(key: string): boolean {
   try { return localStorage.getItem(key) === "true"; } catch { return false; }
 }
 function save(key: string, value: number | string | boolean) {
-  try { localStorage.setItem(key, String(value)); } catch {}
+  try { localStorage.setItem(key, String(value)); } catch { /* ignore */ }
 }
 
 /** Work out how many hearts should have refilled since `refillAt` and return updated hearts + new refillAt */
