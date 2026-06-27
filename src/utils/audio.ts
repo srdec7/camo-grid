@@ -140,13 +140,13 @@ export function playFailSound() {
 
   wahs.forEach(({ start, end, t, dur }) => {
     // Main slide (sawtooth — brassy wah feel)
-    playGlide(start, end, "sawtooth", now + t, dur, 0.47, c);
+    playGlide(start, end, "sawtooth", now + t, dur, 0.33, c);
     // Sub-octave harmony (triangle — adds body)
-    playGlide(start / 2, end / 2, "triangle", now + t, dur, 0.30, c);
+    playGlide(start / 2, end / 2, "triangle", now + t, dur, 0.21, c);
   });
 
   // Final very low groan — seals the defeat
-  playGlide(200, 80, "sawtooth", now + 1.22, 0.55, 0.37, c);
+  playGlide(200, 80, "sawtooth", now + 1.22, 0.55, 0.26, c);
 }
 
 /** ✨ Bright coin chime — ascending C major arpeggio */
@@ -187,38 +187,29 @@ export function playTapSound() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// BGM (BACKGROUND MUSIC) CONTROLLER (Web Audio API implementation for mobile compatibility)
+// BGM (BACKGROUND MUSIC) CONTROLLER (HTML5 Audio for stable mobile streaming)
 // ─────────────────────────────────────────────────────────────────────────────
 
-let bgmBuffer: AudioBuffer | null = null;
-let bgmSource: AudioBufferSourceNode | null = null;
-let bgmGainNode: GainNode | null = null;
+let bgmAudioEl: HTMLAudioElement | null = null;
 let isMuted = false;
-let isPlaying = false;
-let bgmStartTime = 0;
-let bgmPauseOffset = 0;
-
-let bgmArrayBuffer: ArrayBuffer | null = null;
-let bgmFetchPromise: Promise<ArrayBuffer | null> | null = null;
 
 function getPlatformBGMVolume(): number {
   if (typeof window === "undefined" || typeof navigator === "undefined") {
-    return 0.01;
+    return 0.5;
   }
   const ua = navigator.userAgent.toLowerCase();
   
-  // iOS detection (iPhone, iPad, iPod, and iPadOS 13+)
+  // iOS detection
   const isIOS = /iphone|ipad|ipod/.test(ua) || 
                 (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  
   const isAndroid = /android/.test(ua);
   
   if (isAndroid) {
-    return 0.5; // Boosted for Android to be comfortably audible
+    return 1.0; // Max volume for mobile speakers
   } else if (isIOS) {
-    return 0.5; // Increased volume for iOS (was too low previously)
+    return 1.0; // Max volume for mobile speakers
   } else {
-    return 0.3; // Desktop default
+    return 0.6; // Comfortable desktop volume
   }
 }
 
@@ -230,117 +221,34 @@ export function initBGM() {
 
 export function preloadBGM() {
   if (typeof window === "undefined") return;
-  if (bgmArrayBuffer || bgmFetchPromise) return;
-
-  console.log("[BGM] Preloading BGM ArrayBuffer in background (no AudioContext)...");
-  bgmFetchPromise = fetch("/audio/bgm.mp3")
-    .then(res => {
-      if (!res.ok) throw new Error("HTTP error " + res.status);
-      return res.arrayBuffer();
-    })
-    .then(ab => {
-      console.log("[BGM] BGM ArrayBuffer preloaded successfully!");
-      bgmArrayBuffer = ab;
-      return ab;
-    })
-    .catch(err => {
-      console.error("[BGM] Failed to preload BGM:", err);
-      bgmFetchPromise = null;
-      return null;
-    });
-}
-
-function startBGMNode(c: AudioContext, buffer: AudioBuffer) {
-  try {
-    bgmSource = c.createBufferSource();
-    bgmSource.buffer = buffer;
-    bgmSource.loop = true;
-
-    bgmGainNode = c.createGain();
-    const volume = getPlatformBGMVolume();
-    bgmGainNode.gain.setValueAtTime(volume, c.currentTime);
-
-    bgmSource.connect(bgmGainNode);
-    bgmGainNode.connect(c.destination);
-
-    const offset = bgmPauseOffset % buffer.duration;
-    bgmSource.start(0, offset);
-    bgmStartTime = c.currentTime - offset;
-    isPlaying = true;
-    console.log(`[BGM] Playback started at offset: ${offset.toFixed(2)}s with volume: ${volume}`);
-  } catch (err) {
-    console.warn("[BGM] Failed to start Web Audio BGM node:", err);
+  if (!bgmAudioEl) {
+    bgmAudioEl = new Audio("/audio/bgm.mp3");
+    bgmAudioEl.loop = true;
+    bgmAudioEl.volume = getPlatformBGMVolume();
+    bgmAudioEl.preload = "auto";
   }
 }
 
 export function playBGM(): boolean {
   initBGM();
   if (isMuted) return false;
-
-  const c = getCtx();
-  if (!c) return false;
-
-  if (isPlaying && bgmSource) {
-    return true;
+  
+  if (!bgmAudioEl) {
+    preloadBGM();
   }
-
-  // Case 1: AudioBuffer is already decoded
-  if (bgmBuffer) {
-    startBGMNode(c, bgmBuffer);
-    return true;
-  }
-
-  // Case 2: ArrayBuffer is loaded but not decoded yet
-  if (bgmArrayBuffer) {
-    console.log("[BGM] ArrayBuffer ready. Decoding inside user gesture context...");
-    c.decodeAudioData(bgmArrayBuffer.slice(0), 
-      (buffer) => {
-        bgmBuffer = buffer;
-        if (!isMuted && !isPlaying) {
-          startBGMNode(c, buffer);
-        }
-      },
-      (err) => {
-        console.error("[BGM] Async decode failed:", err);
-      }
-    );
-    return true;
-  }
-
-  // Case 3: Still loading in the background
-  if (bgmFetchPromise) {
-    console.log("[BGM] Still preloading ArrayBuffer. Will decode and play once complete...");
-    bgmFetchPromise.then(ab => {
-      if (ab && !isMuted && !isPlaying) {
-        c.decodeAudioData(ab.slice(0), (buffer) => {
-          bgmBuffer = buffer;
-          if (!isMuted && !isPlaying) {
-            startBGMNode(c, buffer);
-          }
-        });
-      }
+  
+  if (bgmAudioEl && bgmAudioEl.paused) {
+    bgmAudioEl.volume = getPlatformBGMVolume();
+    bgmAudioEl.play().catch(err => {
+      console.warn("[BGM] HTML5 Audio play failed. Waiting for interaction.", err);
     });
-    return false;
   }
-
-  // Fallback: preload and retry later
-  preloadBGM();
-  return false;
+  return true;
 }
 
 export function pauseBGM() {
-  if (bgmSource && isPlaying) {
-    const c = getCtx();
-    if (c) {
-      bgmPauseOffset = c.currentTime - bgmStartTime;
-    }
-    try {
-      bgmSource.stop();
-    } catch {
-      // ignore errors if already stopped
-    }
-    bgmSource = null;
-    isPlaying = false;
+  if (bgmAudioEl && !bgmAudioEl.paused) {
+    bgmAudioEl.pause();
   }
 }
 
