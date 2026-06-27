@@ -140,13 +140,13 @@ export function playFailSound() {
 
   wahs.forEach(({ start, end, t, dur }) => {
     // Main slide (sawtooth — brassy wah feel)
-    playGlide(start, end, "sawtooth", now + t, dur, 0.95, c);
+    playGlide(start, end, "sawtooth", now + t, dur, 0.47, c);
     // Sub-octave harmony (triangle — adds body)
-    playGlide(start / 2, end / 2, "triangle", now + t, dur, 0.60, c);
+    playGlide(start / 2, end / 2, "triangle", now + t, dur, 0.30, c);
   });
 
   // Final very low groan — seals the defeat
-  playGlide(200, 80, "sawtooth", now + 1.22, 0.55, 0.75, c);
+  playGlide(200, 80, "sawtooth", now + 1.22, 0.55, 0.37, c);
 }
 
 /** ✨ Bright coin chime — ascending C major arpeggio */
@@ -214,11 +214,11 @@ function getPlatformBGMVolume(): number {
   const isAndroid = /android/.test(ua);
   
   if (isAndroid) {
-    return 0.15; // Boosted for Android to be comfortably audible on phone speakers
+    return 0.5; // Boosted for Android to be comfortably audible
   } else if (isIOS) {
-    return 0.05; // Boosted volume for iPhone (Web Audio linear scale is much quieter than HTML5 Audio)
+    return 0.5; // Increased volume for iOS (was too low previously)
   } else {
-    return 0.015; // Desktop default
+    return 0.3; // Desktop default
   }
 }
 
@@ -293,7 +293,7 @@ export function playBGM(): boolean {
   // Case 2: ArrayBuffer is loaded but not decoded yet
   if (bgmArrayBuffer) {
     console.log("[BGM] ArrayBuffer ready. Decoding inside user gesture context...");
-    c.decodeAudioData(bgmArrayBuffer, 
+    c.decodeAudioData(bgmArrayBuffer.slice(0), 
       (buffer) => {
         bgmBuffer = buffer;
         if (!isMuted && !isPlaying) {
@@ -312,7 +312,7 @@ export function playBGM(): boolean {
     console.log("[BGM] Still preloading ArrayBuffer. Will decode and play once complete...");
     bgmFetchPromise.then(ab => {
       if (ab && !isMuted && !isPlaying) {
-        c.decodeAudioData(ab, (buffer) => {
+        c.decodeAudioData(ab.slice(0), (buffer) => {
           bgmBuffer = buffer;
           if (!isMuted && !isPlaying) {
             startBGMNode(c, buffer);
