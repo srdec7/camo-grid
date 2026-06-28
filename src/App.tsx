@@ -10,7 +10,7 @@ import { TallyView }  from "./components/TallyView";
 import { ShopModal }  from "./components/ShopModal";
 import type { ShopTab } from "./components/ShopModal";
 import { playBGM, pauseBGM, preloadBGM } from "./utils/audio";
-import { initAdMob, initPurchases } from "./utils/adBridge";
+import { initAdMob, initIAP, purchaseNoAds, restorePurchases } from "./utils/adBridge";
 
 // ── localStorage helpers ───────────────────────────────────────────────────
 const LS_LEVEL      = "camo_level_id";
@@ -159,11 +159,11 @@ export default function App() {
     return () => clearInterval(id);
   }, []);
 
-  // ── Preload BGM & Initialize AdMob & IAP on mount ────────────────────────────
+  // ── Preload BGM, Initialize AdMob & IAP on mount ─────────────────────────
   useEffect(() => {
     preloadBGM();
     initAdMob();
-    initPurchases();
+    initIAP();
   }, []);
 
   // ── Autoplay BGM trigger with retry & Page Visibility handling ──────────
@@ -290,10 +290,19 @@ export default function App() {
     setPrevCoins(prev => prev + bonus);
   }, [setCoins]);
 
-  /** Purchase No Ads */
+  /** Purchase No Ads — triggers real StoreKit IAP on native, mock on web */
   const handlePurchaseNoAds = useCallback(() => {
-    setNoAds(true);
-    save(LS_NO_ADS, true);
+    purchaseNoAds(
+      () => {
+        // Called when Apple confirms the purchase
+        setNoAds(true);
+        save(LS_NO_ADS, true);
+      },
+      () => {
+        // Called when the user cancels or an error occurs — do nothing
+        console.log("[IAP] Purchase cancelled or failed.");
+      }
+    );
   }, []);
 
   const handleReset = () => {
@@ -392,7 +401,10 @@ export default function App() {
           onGrantCoins={handleGrantCoins}
           onSpendCoins={handleSpendCoins}
           onPurchaseNoAds={handlePurchaseNoAds}
-          onRestorePurchases={handlePurchaseNoAds}
+          onRestorePurchases={() => restorePurchases(
+            () => { setNoAds(true); save(LS_NO_ADS, true); },
+            () => { console.log("[IAP] Nothing to restore."); }
+          )}
         />
       )}
     </>
