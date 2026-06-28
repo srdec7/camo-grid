@@ -23,10 +23,11 @@ export const ADMOB_REWARDED_ID = "ca-app-pub-5036571902202474/5237601534";
 // Google's official test ad IDs (used in dev/debug builds to avoid policy violations)
 export const ADMOB_REWARDED_TEST_ID = "ca-app-pub-3940256099942544/5224354917";
 
-// Use Vite's build-time flag: true when you run `npm run build`, false during `npm run dev`
-const IS_PRODUCTION = import.meta.env.PROD;
+// ⚠️ Set this to FALSE only right before archiving for the App Store.
+// AdMob will block real ads from showing on development devices, so keep this TRUE during testing.
+export const USE_TEST_ADS = true;
 
-const ACTIVE_REWARDED_ID = IS_PRODUCTION ? ADMOB_REWARDED_ID : ADMOB_REWARDED_TEST_ID;
+const ACTIVE_REWARDED_ID = USE_TEST_ADS ? ADMOB_REWARDED_TEST_ID : ADMOB_REWARDED_ID;
 
 // ─── In-App Purchase Product ID ───────────────────────────────────────────────
 // ⚠️  This must exactly match the Product ID you set in App Store Connect.
@@ -80,10 +81,10 @@ export async function initAdMob(): Promise<void> {
   try {
     await AdMob.initialize({
       requestTrackingAuthorization: true, // iOS ATT prompt
-      initializeForTesting: !IS_PRODUCTION,
+      initializeForTesting: USE_TEST_ADS,
     });
     adMobInitialized = true;
-    console.log("[AdMob] Initialized. Production mode:", IS_PRODUCTION);
+    console.log("[AdMob] Initialized. Test mode:", USE_TEST_ADS);
     await _preloadRewardedAd();
   } catch (err) {
     console.error("[AdMob] Initialization failed:", err);
@@ -99,7 +100,7 @@ async function _preloadRewardedAd(): Promise<void> {
   try {
     await AdMob.prepareRewardVideoAd({
       adId: ACTIVE_REWARDED_ID,
-      isTesting: !IS_PRODUCTION,
+      isTesting: USE_TEST_ADS,
     });
     rewardedAdReady = true;
     console.log("[AdMob] Rewarded ad pre-loaded successfully.");
