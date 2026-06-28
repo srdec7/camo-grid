@@ -15,6 +15,7 @@
  *   - Web browser / dev  → Simulates everything with short delays
  * ────────────────────────────────────────────────────────────
  */
+import 'cordova-plugin-purchase';
 
 // ─── AdMob Configuration Constants ───────────────────────────────────────────
 export const ADMOB_APP_ID      = "ca-app-pub-5036571902202474~6522763042";
