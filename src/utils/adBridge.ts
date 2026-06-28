@@ -55,11 +55,10 @@ function getAdMob(): AdMobPlugin | null {
 // ─── CdvPurchase (cordova-plugin-purchase) type shim ─────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CdvStore = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCdvStore(): CdvStore | null {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const store = (window as any).CdvPurchase?.store;
+    const w = window as any;
+    const store = w.CdvPurchase?.store || w.store;
     return store ?? null;
   } catch {
     return null;
@@ -223,38 +222,44 @@ export async function initIAP(): Promise<void> {
   if (!isNative()) return;
   if (iapInitialized) return;
 
-  const store = getCdvStore();
-  if (!store) {
-    console.warn("[IAP] CdvPurchase.store not available (plugin may not be installed).");
-    return;
-  }
+  const startStore = async () => {
+    const store = getCdvStore();
+    if (!store) {
+      console.warn("[IAP] CdvPurchase.store not available even after deviceready.");
+      return;
+    }
 
-  try {
-    // Register the "No Ads" non-consumable product
-    store.register([
-      {
-        id: IAP_NO_ADS_PRODUCT_ID,
-        type: store.NON_CONSUMABLE,  // One-time purchase, Apple keeps track of it
-        platform: store.Platform?.APPLE_APPSTORE ?? "ios-appstore",
-      },
-    ]);
+    try {
+      store.register([
+        {
+          id: IAP_NO_ADS_PRODUCT_ID,
+          type: store.NON_CONSUMABLE,
+          platform: store.Platform?.APPLE_APPSTORE ?? "ios-appstore",
+        },
+      ]);
 
-    // Handle successful purchases (new purchase OR restore)
-    store.when().approved((transaction: CdvStore) => {
-      // Apple requires you call finish() so the transaction completes in StoreKit
-      transaction.finish();
-      console.log("[IAP] Transaction approved and finished:", transaction);
-    });
+      store.when().approved((transaction: CdvStore) => {
+        transaction.finish();
+        console.log("[IAP] Transaction approved and finished:", transaction);
+      });
 
-    // Initialize and fetch product info from the App Store
-    await store.initialize([
-      store.Platform?.APPLE_APPSTORE ?? "ios-appstore",
-    ]);
+      await store.initialize([
+        store.Platform?.APPLE_APPSTORE ?? "ios-appstore",
+      ]);
 
-    iapInitialized = true;
-    console.log("[IAP] Store initialized. Products:", store.products);
-  } catch (err) {
-    console.error("[IAP] Initialization failed:", err);
+      iapInitialized = true;
+      console.log("[IAP] Store initialized. Products:", store.products);
+    } catch (err) {
+      console.error("[IAP] Initialization failed:", err);
+    }
+  };
+
+  if (getCdvStore()) {
+    // Already injected
+    startStore();
+  } else {
+    // Wait for Capacitor to inject the Cordova plugin
+    document.addEventListener("deviceready", startStore, false);
   }
 }
 
