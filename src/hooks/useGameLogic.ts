@@ -210,5 +210,5 @@ export function useGameLogic(levelData: LevelData | null, onFinish: (result: Gam
     setStatus("playing");
   }, []);
 
-  return { board, taps, status, foundZone, handleTileTap, initBoard, addBonusMoves };
+  return { board, taps, bonusMoves, status, foundZone, handleTileTap, initBoard, addBonusMoves };
 }

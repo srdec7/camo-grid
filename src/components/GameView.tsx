@@ -44,7 +44,7 @@ export const GameView: React.FC<GameViewProps> = ({
   levelData, onFinish, onHome, onContinueWithCoins, onOpenShop, onUseHint,
   coins, hearts, hints, noAds,
 }) => {
-  const { board, taps, status, foundZone, handleTileTap, initBoard, addBonusMoves } = useGameLogic(levelData, onFinish);
+  const { board, taps, bonusMoves, status, foundZone, handleTileTap, initBoard, addBonusMoves } = useGameLogic(levelData, onFinish);
   const [magnified, setMagnified] = useState(false);
 
   const [bgmEnabled, setBgmEnabled] = useState(() => isBGMEnabled());
@@ -203,7 +203,7 @@ export const GameView: React.FC<GameViewProps> = ({
   if (board.length === 0) return null;
 
   const movesLeft = levelData.moveLimit > 0
-    ? Math.max(0, levelData.moveLimit - taps)
+    ? Math.max(0, levelData.moveLimit + bonusMoves - taps)
     : Infinity;
   const movesWarn = typeof movesLeft === "number" && movesLeft <= 5;
 
