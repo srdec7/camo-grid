@@ -109,8 +109,8 @@ async function _showRewardedAdNative(): Promise<void> {
       listeners.forEach(l => { try { l.remove(); } catch {} });
     };
 
-    // ── Reward granted (user watched enough of the ad) ──
-    // Try both known event name variants across plugin versions
+        // ── Reward granted (user watched enough of the ad) ──
+    // Try all known event name variants across plugin versions
     const onRewarded = () => {
       console.log("[AdMob] Reward earned!");
       rewardEarned = true;
@@ -119,11 +119,12 @@ async function _showRewardedAdNative(): Promise<void> {
     };
 
     // @capacitor-community/admob fires one of these depending on version:
+    listeners.push(AdMob.addListener("onRewardedVideoAdReward",   onRewarded)); // v5/v6/v8
     listeners.push(AdMob.addListener("onRewardedVideoAdRewarded", onRewarded));
-    listeners.push(AdMob.addListener("onRewardVideoAdReward",     onRewarded)); // v4+
+    listeners.push(AdMob.addListener("onRewardVideoAdReward",     onRewarded)); // v4
 
     // ── Ad closed (always fires when ad dismisses, rewarded or not) ──
-    listeners.push(AdMob.addListener("onRewardedVideoAdClosed", () => {
+    const onClosed = () => {
       console.log("[AdMob] Ad closed. Reward earned:", rewardEarned);
       rewardedAdReady = false;
       _preloadRewardedAd();
@@ -133,7 +134,11 @@ async function _showRewardedAdNative(): Promise<void> {
       } else {
         reject(new Error("Ad closed without reward")); // ← user skipped
       }
-    }));
+    };
+
+    listeners.push(AdMob.addListener("onRewardedVideoAdDismissed", onClosed)); // v5/v6/v8
+    listeners.push(AdMob.addListener("onRewardedVideoAdClosed",    onClosed)); // fallback
+    listeners.push(AdMob.addListener("onRewardVideoAdClosed",     onClosed)); // fallback
 
     // ── Load/show failure ──
     listeners.push(AdMob.addListener("onRewardedVideoAdFailedToLoad", (error: unknown) => {
