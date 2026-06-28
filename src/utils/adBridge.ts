@@ -243,6 +243,16 @@ export async function purchaseNoAds(
       return;
     }
 
+    console.log("[IAP] Loading product:", IAP_NO_ADS_PRODUCT_ID);
+    const { validProducts, invalidProductIds } = await PurchasePlugin.load({ productIds: [IAP_NO_ADS_PRODUCT_ID] });
+
+    if (invalidProductIds.includes(IAP_NO_ADS_PRODUCT_ID) || validProducts.length === 0) {
+      console.error("[IAP] Product is invalid or not available in StoreKit:", IAP_NO_ADS_PRODUCT_ID);
+      console.warn("Make sure the Paid Apps Agreement is signed and the Bundle ID matches.");
+      if (onFail) onFail();
+      return;
+    }
+
     console.log("[IAP] Starting purchase for:", IAP_NO_ADS_PRODUCT_ID);
 
     // purchase() presents the Apple payment sheet.
