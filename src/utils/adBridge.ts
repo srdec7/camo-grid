@@ -101,31 +101,58 @@ async function _showRewardedAdNative(): Promise<void> {
   }
 
   return new Promise((resolve, reject) => {
-    // Listen for reward event
+    let rewardEarned = false;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    AdMob.addListener("onRewardedVideoAdRewarded", () => {
-      rewardedAdReady = false;
-      // Pre-load next ad in background
-      _preloadRewardedAd();
-      resolve();
-    });
+    const listeners: any[] = [];
 
-    // Listen for close without reward
-    AdMob.addListener("onRewardedVideoAdClosed", () => {
+    const cleanup = () => {
+      listeners.forEach(l => { try { l.remove(); } catch {} });
+    };
+
+    // ── Reward granted (user watched enough of the ad) ──
+    // Try both known event name variants across plugin versions
+    const onRewarded = () => {
+      console.log("[AdMob] Reward earned!");
+      rewardEarned = true;
       rewardedAdReady = false;
       _preloadRewardedAd();
-      // If reward event did not fire, this will still resolve —
-      // but caller should check via the onSuccess/onFail callbacks.
-    });
+    };
 
-    // Listen for load failure
-    AdMob.addListener("onRewardedVideoAdFailedToLoad", (error: unknown) => {
+    // @capacitor-community/admob fires one of these depending on version:
+    listeners.push(AdMob.addListener("onRewardedVideoAdRewarded", onRewarded));
+    listeners.push(AdMob.addListener("onRewardVideoAdReward",     onRewarded)); // v4+
+
+    // ── Ad closed (always fires when ad dismisses, rewarded or not) ──
+    listeners.push(AdMob.addListener("onRewardedVideoAdClosed", () => {
+      console.log("[AdMob] Ad closed. Reward earned:", rewardEarned);
       rewardedAdReady = false;
+      _preloadRewardedAd();
+      cleanup();
+      if (rewardEarned) {
+        resolve(); // ← reward was granted before close
+      } else {
+        reject(new Error("Ad closed without reward")); // ← user skipped
+      }
+    }));
+
+    // ── Load/show failure ──
+    listeners.push(AdMob.addListener("onRewardedVideoAdFailedToLoad", (error: unknown) => {
+      console.error("[AdMob] Ad failed to load:", error);
+      rewardedAdReady = false;
+      cleanup();
       reject(new Error(`Rewarded ad failed to load: ${JSON.stringify(error)}`));
-    });
+    }));
+
+    listeners.push(AdMob.addListener("onRewardedVideoAdFailedToShow", (error: unknown) => {
+      console.error("[AdMob] Ad failed to show:", error);
+      rewardedAdReady = false;
+      cleanup();
+      reject(new Error(`Rewarded ad failed to show: ${JSON.stringify(error)}`));
+    }));
 
     // Show the ad
     AdMob.showRewardVideoAd().catch((err: unknown) => {
+      cleanup();
       reject(new Error(`showRewardVideoAd error: ${err}`));
     });
   });
