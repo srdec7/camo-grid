@@ -19,11 +19,8 @@ export const ADMOB_REWARDED_ID = "ca-app-pub-5036571902202474/5237601534";
 // Test ad unit IDs (use during development to avoid policy violations)
 export const ADMOB_REWARDED_TEST_ID = "ca-app-pub-3940256099942544/5224354917";
 
-// Set to true only when building a real release binary
-const IS_PRODUCTION = typeof window !== "undefined" &&
-  !window.location.hostname.includes("localhost") &&
-  !window.location.hostname.includes("127.0.0.1") &&
-  !window.location.hostname.includes("vercel.app");
+// Use Vite's production environment flag to distinguish development vs production build
+const IS_PRODUCTION = import.meta.env.PROD;
 
 const ACTIVE_REWARDED_ID = IS_PRODUCTION ? ADMOB_REWARDED_ID : ADMOB_REWARDED_TEST_ID;
 
