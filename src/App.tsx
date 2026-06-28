@@ -10,7 +10,7 @@ import { TallyView }  from "./components/TallyView";
 import { ShopModal }  from "./components/ShopModal";
 import type { ShopTab } from "./components/ShopModal";
 import { playBGM, pauseBGM, preloadBGM } from "./utils/audio";
-import { initAdMob } from "./utils/adBridge";
+import { initAdMob, initPurchases } from "./utils/adBridge";
 
 // ── localStorage helpers ───────────────────────────────────────────────────
 const LS_LEVEL      = "camo_level_id";
@@ -159,10 +159,11 @@ export default function App() {
     return () => clearInterval(id);
   }, []);
 
-  // ── Preload BGM & Initialize AdMob on mount ────────────────────────────
+  // ── Preload BGM & Initialize AdMob & IAP on mount ────────────────────────────
   useEffect(() => {
     preloadBGM();
     initAdMob();
+    initPurchases();
   }, []);
 
   // ── Autoplay BGM trigger with retry & Page Visibility handling ──────────

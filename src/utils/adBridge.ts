@@ -5,12 +5,10 @@
  *
  * App ID    : ca-app-pub-5036571902202474~6522763042  (Camo Grid)
  * Ad Unit ID: ca-app-pub-5036571902202474/5237601534  (Rewarded)
- *
- * Environment detection:
- *   - Native (Capacitor) → Uses @capacitor-community/admob plugin
- *   - Web browser / dev  → Simulates ad with a 3 second wait
  * ────────────────────────────────────────────────────────────
  */
+
+import { Purchases, PRODUCT_CATEGORY } from '@revenuecat/purchases-capacitor';
 
 // ─── AdMob Configuration Constants ───────────────────────────────────────────
 export const ADMOB_APP_ID     = "ca-app-pub-5036571902202474~6522763042";
@@ -18,6 +16,11 @@ export const ADMOB_REWARDED_ID = "ca-app-pub-5036571902202474/5237601534";
 
 // Test ad unit IDs (use during development to avoid policy violations)
 export const ADMOB_REWARDED_TEST_ID = "ca-app-pub-3940256099942544/5224354917";
+
+// ─── RevenueCat Configuration Constants ──────────────────────────────────────
+export const REVENUECAT_APPLE_KEY = "appl_your_revenuecat_api_key"; // Replace with your RevenueCat Apple API Key
+export const REVENUECAT_ENTITLEMENT_ID = "no_ads"; // Entitlement ID configured in RevenueCat dashboard
+export const REVENUECAT_PRODUCT_ID = "com.yourdomain.camogrid.noads"; // Product ID in App Store Connect
 
 // Use Vite's production environment flag to distinguish development vs production build
 const IS_PRODUCTION = import.meta.env.PROD;
@@ -197,33 +200,84 @@ export async function showRewardedAd(
   }
 }
 
+// ─── Initialize RevenueCat (call once early in app lifecycle) ──────────────────
+let purchasesInitialized = false;
+
+export async function initPurchases(): Promise<void> {
+  if (!isNative()) return;
+  if (purchasesInitialized) return;
+
+  try {
+    await Purchases.configure({ apiKey: REVENUECAT_APPLE_KEY });
+    purchasesInitialized = true;
+    console.log("[RevenueCat] Initialized successfully.");
+  } catch (err) {
+    console.error("[RevenueCat] Initialization failed:", err);
+  }
+}
+
 /**
- * Simulates an IAP (In-App Purchase).
- * In native build: hook up to RevenueCat / StoreKit / Google Play Billing.
+ * Executes IAP via RevenueCat (with Web mock fallback).
  */
 export async function purchaseNoAds(onSuccess: () => void, onFail?: () => void): Promise<void> {
   try {
-    // Web mock — auto-succeed after brief delay
-    // TODO: Replace with RevenueCat or native IAP SDK call for production build
-    await new Promise((r) => setTimeout(r, 800));
-    onSuccess();
+    if (isNative()) {
+      console.log("[RevenueCat] Fetching product details for:", REVENUECAT_PRODUCT_ID);
+      const { products } = await Purchases.getProducts({
+        productIdentifiers: [REVENUECAT_PRODUCT_ID],
+        type: PRODUCT_CATEGORY.NON_SUBSCRIPTION
+      });
+      
+      if (!products || products.length === 0) {
+        throw new Error(`Product ${REVENUECAT_PRODUCT_ID} could not be fetched from store.`);
+      }
+
+      console.log("[RevenueCat] Triggering purchase for product:", REVENUECAT_PRODUCT_ID);
+      const { customerInfo } = await Purchases.purchaseStoreProduct({ product: products[0] });
+      
+      // Verify if the active entitlements list includes our entitlement ID
+      if (customerInfo.entitlements.active[REVENUECAT_ENTITLEMENT_ID] !== undefined) {
+        console.log("[RevenueCat] Purchase successful!");
+        onSuccess();
+      } else {
+        console.warn("[RevenueCat] Purchase completed, but entitlement was not active.");
+        if (onFail) onFail();
+      }
+    } else {
+      // Web mock — auto-succeed after brief delay
+      await new Promise((r) => setTimeout(r, 800));
+      onSuccess();
+    }
   } catch (err) {
-    console.error("Purchase failed:", err);
+    console.error("[RevenueCat] Purchase failed:", err);
     if (onFail) onFail();
   }
 }
 
 /**
- * Simulates Restoring Purchases.
+ * Restores Purchases via RevenueCat (with Web mock fallback).
  * Apple requires a "Restore Purchases" button for non-consumable items like No Ads.
  */
 export async function restorePurchases(onSuccess: () => void, onFail?: () => void): Promise<void> {
   try {
-    await new Promise((r) => setTimeout(r, 800));
-    // TODO: Replace with RevenueCat or native StoreKit restore call for production build
-    onSuccess();
+    if (isNative()) {
+      console.log("[RevenueCat] Triggering restore purchases...");
+      const { customerInfo } = await Purchases.restorePurchases();
+      
+      if (customerInfo.entitlements.active[REVENUECAT_ENTITLEMENT_ID] !== undefined) {
+        console.log("[RevenueCat] Restore successful!");
+        onSuccess();
+      } else {
+        console.warn("[RevenueCat] Restore completed, but entitlement was not found.");
+        if (onFail) onFail();
+      }
+    } else {
+      // Web mock — auto-succeed after brief delay
+      await new Promise((r) => setTimeout(r, 800));
+      onSuccess();
+    }
   } catch (err) {
-    console.error("Restore failed:", err);
+    console.error("[RevenueCat] Restore failed:", err);
     if (onFail) onFail();
   }
 }
