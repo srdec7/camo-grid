@@ -218,7 +218,8 @@ export async function initIAP(): Promise<void> {
 
 /**
  * Triggers a native "No Ads" In-App Purchase using Apple StoreKit.
- * On iOS, PurchasePlugin.purchase() presents the native payment sheet directly.
+ * PurchasePlugin.purchase() presents the native payment sheet and resolves
+ * when the transaction is approved. Rejects if the user cancels.
  * Calls onSuccess() if the purchase completes.
  * Calls onFail() if the user cancels or an error occurs.
  */
@@ -244,26 +245,17 @@ export async function purchaseNoAds(
 
     console.log("[IAP] Starting purchase for:", IAP_NO_ADS_PRODUCT_ID);
 
-    // Listen for the purchase-complete event BEFORE opening the payment sheet
-    const listener = await PurchasePlugin.addListener("purchaseUpdated", (data: { productId?: string; transactionId?: string }) => {
-      console.log("[IAP] purchaseUpdated event:", data);
-      if (data?.productId === IAP_NO_ADS_PRODUCT_ID && data?.transactionId) {
-        // Finish (acknowledge) the transaction so Apple removes it from the queue
-        PurchasePlugin.finish({ transactionId: data.transactionId })
-          .catch(e => console.warn("[IAP] finish() failed:", e));
-        listener.remove();
-        console.log("[IAP] Purchase completed!");
-        onSuccess();
-      }
-    });
-
-    // Open the Apple payment sheet
+    // purchase() presents the Apple payment sheet.
+    // It resolves when the transaction is approved, rejects if cancelled/failed.
     await PurchasePlugin.purchase({ productId: IAP_NO_ADS_PRODUCT_ID });
+
+    // If we reach here, the purchase was approved by Apple ✅
+    console.log("[IAP] Purchase approved!");
+    onSuccess();
 
   } catch (err: unknown) {
     const msg = String(err);
-    // User tapped Cancel on the Apple payment sheet
-    if (msg.includes("cancel") || msg.includes("Cancel") || msg.includes("cancelled")) {
+    if (msg.toLowerCase().includes("cancel")) {
       console.log("[IAP] Purchase cancelled by user.");
     } else {
       console.error("[IAP] purchaseNoAds failed:", err);
