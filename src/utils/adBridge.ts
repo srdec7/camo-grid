@@ -7,15 +7,16 @@
  *   App ID    : ca-app-pub-5036571902202474~6522763042  (Camo Grid)
  *   Ad Unit ID: ca-app-pub-5036571902202474/5237601534  (Rewarded)
  *
- * In-App Purchases (cordova-plugin-purchase / CdvPurchase):
+ * In-App Purchases (capacitor-plugin-cdv-purchase):
  *   Product ID: com.camogrid.noads  ← must match your App Store Connect product ID exactly
  *
  * Environment detection:
- *   - Native (Capacitor) → Uses @capacitor-community/admob + CdvPurchase (StoreKit)
+ *   - Native (Capacitor) → Uses @capacitor-community/admob + capacitor-plugin-cdv-purchase
  *   - Web browser / dev  → Simulates everything with short delays
  * ────────────────────────────────────────────────────────────
  */
-import 'cordova-plugin-purchase';
+
+import { PurchasePlugin } from 'capacitor-plugin-cdv-purchase';
 
 // ─── AdMob Configuration Constants ───────────────────────────────────────────
 export const ADMOB_APP_ID      = "ca-app-pub-5036571902202474~6522763042";
@@ -47,19 +48,6 @@ function getAdMob(): AdMobPlugin | null {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { AdMob } = (window as any).Capacitor.Plugins;
     return AdMob ?? null;
-  } catch {
-    return null;
-  }
-}
-
-// ─── CdvPurchase (cordova-plugin-purchase) type shim ─────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type CdvStore = any;
-function getCdvStore(): CdvStore | null {
-  try {
-    const w = window as any;
-    const store = w.CdvPurchase?.store || w.store;
-    return store ?? null;
   } catch {
     return null;
   }
@@ -209,63 +197,29 @@ export async function showRewardedAd(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ── In-App Purchases (cordova-plugin-purchase / CdvPurchase) ───────────────────
+// ── In-App Purchases (capacitor-plugin-cdv-purchase) ───────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════════
 
-let iapInitialized = false;
-
 /**
- * Initializes the IAP store with the "No Ads" non-consumable product.
- * Call this once on app mount alongside initAdMob().
+ * initIAP is a no-op here — capacitor-plugin-cdv-purchase initializes lazily
+ * on the first call to purchase() or restore(). No setup needed.
  */
 export async function initIAP(): Promise<void> {
+  // capacitor-plugin-cdv-purchase is a proper Capacitor plugin injected at
+  // app startup by the Capacitor runtime — no manual init step required.
   if (!isNative()) return;
-  if (iapInitialized) return;
-
-  const startStore = async () => {
-    const store = getCdvStore();
-    if (!store) {
-      console.warn("[IAP] CdvPurchase.store not available even after deviceready.");
-      return;
-    }
-
-    try {
-      store.register([
-        {
-          id: IAP_NO_ADS_PRODUCT_ID,
-          type: store.NON_CONSUMABLE,
-          platform: store.Platform?.APPLE_APPSTORE ?? "ios-appstore",
-        },
-      ]);
-
-      store.when().approved((transaction: CdvStore) => {
-        transaction.finish();
-        console.log("[IAP] Transaction approved and finished:", transaction);
-      });
-
-      await store.initialize([
-        store.Platform?.APPLE_APPSTORE ?? "ios-appstore",
-      ]);
-
-      iapInitialized = true;
-      console.log("[IAP] Store initialized. Products:", store.products);
-    } catch (err) {
-      console.error("[IAP] Initialization failed:", err);
-    }
-  };
-
-  if (getCdvStore()) {
-    // Already injected
-    startStore();
-  } else {
-    // Wait for Capacitor to inject the Cordova plugin
-    document.addEventListener("deviceready", startStore, false);
+  try {
+    await PurchasePlugin.init();
+    console.log("[IAP] PurchasePlugin initialized.");
+  } catch (err) {
+    console.warn("[IAP] PurchasePlugin.init() failed (non-fatal):", err);
   }
 }
 
 /**
  * Triggers a native "No Ads" In-App Purchase using Apple StoreKit.
- * Calls onSuccess() if the purchase completes (new or already owned).
+ * On iOS, PurchasePlugin.purchase() presents the native payment sheet directly.
+ * Calls onSuccess() if the purchase completes.
  * Calls onFail() if the user cancels or an error occurs.
  */
 export async function purchaseNoAds(
@@ -279,53 +233,41 @@ export async function purchaseNoAds(
     return;
   }
 
-  const store = getCdvStore();
-  if (!store) {
-    console.error("[IAP] Store not available.");
-    if (onFail) onFail();
-    return;
-  }
-
   try {
-    const product = store.get(IAP_NO_ADS_PRODUCT_ID);
-    if (!product) {
-      console.error("[IAP] Product not found:", IAP_NO_ADS_PRODUCT_ID);
+    console.log("[IAP] Checking if device can make payments...");
+    const { canMakePayments } = await PurchasePlugin.canMakePayments();
+    if (!canMakePayments) {
+      console.warn("[IAP] This device cannot make payments (parental controls?).");
       if (onFail) onFail();
       return;
     }
 
-    // Present the native Apple payment sheet
-    const offer = product.getOffer();
-    if (!offer) {
-      console.error("[IAP] No offer available for product:", IAP_NO_ADS_PRODUCT_ID);
-      if (onFail) onFail();
-      return;
-    }
+    console.log("[IAP] Starting purchase for:", IAP_NO_ADS_PRODUCT_ID);
 
-    await new Promise<void>((resolve, reject) => {
-      // Listen specifically for this product's lifecycle
-      store.when()
-        .productId(IAP_NO_ADS_PRODUCT_ID)
-        .approved(() => {
-          console.log("[IAP] Purchase approved!");
-          resolve();
-          onSuccess();
-        })
-        .cancelled(() => {
-          console.log("[IAP] Purchase cancelled by user.");
-          reject(new Error("Purchase cancelled"));
-          if (onFail) onFail();
-        });
-
-      // Open the native purchase sheet
-      offer.order().catch((err: unknown) => {
-        reject(new Error(`order() failed: ${err}`));
-        if (onFail) onFail();
-      });
+    // Listen for the purchase-complete event BEFORE opening the payment sheet
+    const listener = await PurchasePlugin.addListener("purchaseUpdated", (data: { productId?: string; transactionId?: string }) => {
+      console.log("[IAP] purchaseUpdated event:", data);
+      if (data?.productId === IAP_NO_ADS_PRODUCT_ID && data?.transactionId) {
+        // Finish (acknowledge) the transaction so Apple removes it from the queue
+        PurchasePlugin.finish({ transactionId: data.transactionId })
+          .catch(e => console.warn("[IAP] finish() failed:", e));
+        listener.remove();
+        console.log("[IAP] Purchase completed!");
+        onSuccess();
+      }
     });
 
-  } catch (err) {
-    console.error("[IAP] purchaseNoAds failed:", err);
+    // Open the Apple payment sheet
+    await PurchasePlugin.purchase({ productId: IAP_NO_ADS_PRODUCT_ID });
+
+  } catch (err: unknown) {
+    const msg = String(err);
+    // User tapped Cancel on the Apple payment sheet
+    if (msg.includes("cancel") || msg.includes("Cancel") || msg.includes("cancelled")) {
+      console.log("[IAP] Purchase cancelled by user.");
+    } else {
+      console.error("[IAP] purchaseNoAds failed:", err);
+    }
     if (onFail) onFail();
   }
 }
@@ -346,37 +288,38 @@ export async function restorePurchases(
     return;
   }
 
-  const store = getCdvStore();
-  if (!store) {
-    console.error("[IAP] Store not available.");
-    if (onFail) onFail();
-    return;
-  }
-
   try {
     console.log("[IAP] Restoring purchases...");
 
-    let restored = false;
+    // Check existing purchases first (StoreKit receipt)
+    const { purchases } = await PurchasePlugin.getPurchases();
+    console.log("[IAP] Found purchases:", purchases);
 
-    // Watch for any restored approved transaction for our product
-    store.when()
-      .productId(IAP_NO_ADS_PRODUCT_ID)
-      .approved((transaction: CdvStore) => {
-        transaction.finish();
-        if (!restored) {
-          restored = true;
-          console.log("[IAP] Restore successful!");
-          onSuccess();
-        }
-      });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const owned = (purchases as any[]).some(
+      (p: { productId?: string }) => p.productId === IAP_NO_ADS_PRODUCT_ID
+    );
 
-    // Trigger the native restore flow (shows Apple's login prompt if needed)
-    await store.restorePurchases();
+    if (owned) {
+      console.log("[IAP] Restore successful — product already owned.");
+      onSuccess();
+      return;
+    }
 
-    // If no restore event fired within 4s, assume nothing to restore
-    await new Promise<void>((resolve) => setTimeout(resolve, 4000));
+    // Trigger Apple's native restore flow (prompts Apple ID login if needed)
+    await PurchasePlugin.restore();
 
-    if (!restored) {
+    // Re-check purchases after restore
+    const { purchases: after } = await PurchasePlugin.getPurchases();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const restored = (after as any[]).some(
+      (p: { productId?: string }) => p.productId === IAP_NO_ADS_PRODUCT_ID
+    );
+
+    if (restored) {
+      console.log("[IAP] Restore confirmed.");
+      onSuccess();
+    } else {
       console.log("[IAP] Nothing to restore.");
       if (onFail) onFail();
     }
