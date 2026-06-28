@@ -255,13 +255,37 @@ export async function purchaseNoAds(
 
     console.log("[IAP] Starting purchase for:", IAP_NO_ADS_PRODUCT_ID);
 
-    // purchase() presents the Apple payment sheet.
-    // It resolves when the transaction is approved, rejects if cancelled/failed.
-    await PurchasePlugin.purchase({ productId: IAP_NO_ADS_PRODUCT_ID });
+    return new Promise<void>(async (resolve, reject) => {
+      // Listen for the transaction update
+      const listener = await PurchasePlugin.addListener("transactionUpdated", (data: any) => {
+        console.log("[IAP] transactionUpdated event:", data);
+        if (data.productId === IAP_NO_ADS_PRODUCT_ID) {
+          if (data.state === "PaymentTransactionStatePurchased" || data.state === "PaymentTransactionStateRestored") {
+            if (data.transactionIdentifier) {
+              PurchasePlugin.finish({ transactionId: data.transactionIdentifier }).catch(e => console.warn(e));
+            }
+            listener.remove();
+            console.log("[IAP] Purchase successful!");
+            onSuccess();
+            resolve();
+          } else if (data.state === "PaymentTransactionStateFailed") {
+            listener.remove();
+            console.error("[IAP] Purchase failed/cancelled.");
+            if (onFail) onFail();
+            reject(new Error("Purchase failed"));
+          }
+        }
+      });
 
-    // If we reach here, the purchase was approved by Apple ✅
-    console.log("[IAP] Purchase approved!");
-    onSuccess();
+      try {
+        await PurchasePlugin.purchase({ productId: IAP_NO_ADS_PRODUCT_ID });
+      } catch (err) {
+        listener.remove();
+        console.error("[IAP] purchase() call threw an error:", err);
+        if (onFail) onFail();
+        reject(err);
+      }
+    });
 
   } catch (err: unknown) {
     const msg = String(err);
