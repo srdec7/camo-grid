@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAMO Grid - Support & Privacy Policy</title>
+  <!-- Modern Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-color: #0d1117;
+      --card-bg: rgba(22, 27, 34, 0.8);
+      --border-color: rgba(48, 54, 61, 0.6);
+      --text-primary: #f0f6fc;
+      --text-secondary: #8b949e;
+      --accent-color: #15A349; /* Jungle Green matching CAMO theme */
+      --accent-hover: #1cc65b;
+      --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-primary);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      line-height: 1.6;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      max-width: 800px;
+      width: 100%;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #ffffff 0%, var(--accent-color) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-primary);
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-btn.active {
+      color: var(--text-primary);
+      background-color: var(--accent-color);
+      box-shadow: 0 4px 12px rgba(21, 163, 73, 0.25);
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .content-section {
+      display: none;
+    }
+
+    .content-section.active {
+      display: block;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+      font-weight: 600;
+      border-bottom: 2px solid var(--accent-color);
+      padding-bottom: 8px;
+      display: inline-block;
+    }
+
+    p {
+      margin-bottom: 16px;
+      color: #cbd5e1;
+    }
+
+    ul, ol {
+      margin-bottom: 20px;
+      padding-left: 24px;
+      color: #cbd5e1;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .contact-button {
+      display: inline-flex;
+      align-items: center;
+      background-color: var(--accent-color);
+      color: white;
+      text-decoration: none;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+      margin-top: 10px;
+      box-shadow: 0 4px 14px rgba(21, 163, 73, 0.3);
+    }
+
+    .contact-button:hover {
+      background-color: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(21, 163, 73, 0.4);
+    }
+
+    .faq-item {
+      margin-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 16px;
+    }
+
+    .faq-item:last-child {
+      border: none;
+      padding-bottom: 0;
+    }
+
+    .faq-question {
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+      font-size: 1.1rem;
+    }
+
+    .faq-answer {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    footer a {
+      color: var(--accent-color);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>CAMO Grid</h1>
+      <p class="subtitle">Support Center & Privacy Policy</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('support')">Customer Support</button>
+      <button class="tab-btn" onclick="switchTab('privacy')">Privacy Policy</button>
+    </div>
+
+    <div class="card">
+      <!-- SUPPORT SECTION -->
+      <section id="support" class="content-section active">
+        <h2>Customer Support</h2>
+        <p>Welcome to the CAMO Grid Support Center. If you are experiencing issues with ads, purchase recovery, game controls, or have any other feedback, we are here to help!</p>
+        
+        <div style="margin: 24px 0;">
+          <a href="mailto:srdec7@gmail.com?subject=CAMO%20Grid%20Support%20Request" class="contact-button">
+            Contact Support (srdec7@gmail.com)
+          </a>
+        </div>
+
+        <h3 style="margin: 24px 0 12px; font-family: 'Outfit'; font-size: 1.4rem;">Frequently Asked Questions</h3>
+        
+        <div class="faq-item">
+          <div class="faq-question">Q. I bought the "Remove Ads" pass, but ads are still showing. What should I do?</div>
+          <div class="faq-answer">A. Please open the game's Shop Menu and tap the "Restore Purchases" button at the bottom. StoreKit will securely query your Apple ID and re-activate your ad-free status immediately.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">Q. My game move count did not increase after watching an ad.</div>
+          <div class="faq-answer">A. Make sure your device has a stable internet connection. If the ad fails to play completely or gets cut off early, the game might not receive the completion callback. Try watching the ad fully before closing the prompt.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">Q. How do I request a refund for a purchase?</div>
+          <div class="faq-answer">A. All billing transactions are managed directly by Apple. To request a refund, please sign into Apple's <a href="https://reportaproblem.apple.com/" target="_blank" style="color: var(--accent-color); text-decoration: none;">Report a Problem</a> page with your Apple ID and select Request a Refund.</div>
+        </div>
+      </section>
+
+      <!-- PRIVACY POLICY SECTION -->
+      <section id="privacy" class="content-section">
+        <h2>Privacy Policy</h2>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 24px;">Last updated: June 29, 2026</p>
+        
+        <p>We respect your privacy and are committed to protecting any information you share while playing <strong>CAMO Grid</strong>.</p>
+
+        <h3 style="margin: 20px 0 10px; font-family: 'Outfit';">1. Information We Collect</h3>
+        <p>CAMO Grid does not require or collect any personal identity information (such as your name, phone number, or home address) to play.</p>
+        <ul>
+          <li><strong>Device & Identifier Data:</strong> We may access anonymous device identifiers (such as Apple’s IDFA or Google's GAID) solely to serve and measure advertisements.</li>
+          <li><strong>In-App Purchase Receipts:</strong> Transactions are handled directly by the App Store. We only check local purchase status to verify and unlock your Purchased Items (e.g. No-Ads status).</li>
+        </ul>
+
+        <h3 style="margin: 20px 0 10px; font-family: 'Outfit';">2. Third-Party Services</h3>
+        <p>We use third-party services that may collect data used to identify you in accordance with their own policies:</p>
+        <ul>
+          <li><strong>Google AdMob:</strong> Used to serve advertisements in the game. Google AdMob may collect and use device identifiers, geolocation data, and ad interaction logs to personalize ads. You can review Google's privacy terms <a href="https://policies.google.com/privacy" target="_blank" style="color: var(--accent-color); text-decoration: none;">here</a>.</li>
+          <li><strong>Apple StoreKit:</strong> Handles processing of native payments and purchase receipts.</li>
+        </ul>
+
+        <h3 style="margin: 20px 0 10px; font-family: 'Outfit';">3. Children's Privacy</h3>
+        <p>Our game is designed to be family-friendly. We do not knowingly collect personal data from children under 13. If you believe your child has shared data with us, please contact us at the support address below.</p>
+
+        <h3 style="margin: 20px 0 10px; font-family: 'Outfit';">4. Contact Us</h3>
+        <p>If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us at: <a href="mailto:srdec7@gmail.com" style="color: var(--accent-color); text-decoration: none;">srdec7@gmail.com</a>.</p>
+      </section>
+    </div>
+
+    <footer>
+      &copy; 2026 CAMO Grid. Developed by <a href="https://github.com/srdec7" target="_blank">srdec7</a>.
+    </footer>
+  </div>
+
+  <script>
+    function switchTab(tabId) {
+      // Toggle active classes on buttons
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+
+      // Toggle visibility of sections
+      document.querySelectorAll('.content-section').forEach(section => {
+        section.classList.remove('active');
+      });
+      document.getElementById(tabId).classList.add('active');
+    }
+  </script>
+</body>
+</html>
